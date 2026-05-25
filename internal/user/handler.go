@@ -64,18 +64,27 @@ func (h *Handler) Create(c *gin.Context) {
 	response.Created(c, user)
 }
 
-func contextUser(c *gin.Context) User {
-	u, _ := c.Get("user")
-	return u.(User)
+func contextUser(c *gin.Context) (User, bool) {
+	u, ok := c.Get("user")
+	if !ok {
+		return User{}, false
+	}
+	user, ok := u.(User)
+	return user, ok
 }
 
 func (h *Handler) Update(c *gin.Context) {
+	cu, ok := contextUser(c)
+	if !ok {
+		response.Error(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
 	var dto UpdateUserDto
 	if err := c.ShouldBindJSON(&dto); err != nil {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	user, err := h.service.Update(contextUser(c).ID, dto)
+	user, err := h.service.Update(cu.ID, dto)
 	if err != nil {
 		response.Error(c, statusFromErr(err), err.Error())
 		return
@@ -84,7 +93,12 @@ func (h *Handler) Update(c *gin.Context) {
 }
 
 func (h *Handler) Delete(c *gin.Context) {
-	if err := h.service.Delete(contextUser(c).ID); err != nil {
+	cu, ok := contextUser(c)
+	if !ok {
+		response.Error(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	if err := h.service.Delete(cu.ID); err != nil {
 		response.Error(c, statusFromErr(err), err.Error())
 		return
 	}

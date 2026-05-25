@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"go-first-api/internal/auth"
 	"go-first-api/internal/user"
 	"go-first-api/pkg/pagination"
 	"go-first-api/pkg/response"
@@ -68,7 +69,7 @@ func (h *Handler) Create(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	u, _ := c.Get("user")
+	u, _ := c.Get(auth.ContextUser)
 	dto.UserID = u.(user.User).ID
 	post, err := h.service.Create(dto)
 	if err != nil {

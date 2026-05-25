@@ -39,18 +39,24 @@ func main() {
 		log.Fatal("failed to migrate: ", err)
 	}
 
+	if os.Getenv("JWT_SECRET") == "" {
+		log.Fatal("JWT_SECRET is not set")
+	}
+
 	userService := user.NewService(user.NewRepository(db))
 	userHandler := user.NewHandler(userService)
 	postHandler := post.NewHandler(post.NewService(post.NewRepository(db)))
 	authHandler := auth.NewHandler(userService)
+
+	jwtMiddleware := auth.JWTMiddleware(userService)
 
 	r := gin.Default()
 	r.Use(func(c *gin.Context) {
 		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 1<<20)
 		c.Next()
 	})
-	userHandler.RegisterRoutes(r, auth.JWTMiddleware(userService))
-	postHandler.RegisterRoutes(r, auth.JWTMiddleware(userService))
+	userHandler.RegisterRoutes(r, jwtMiddleware)
+	postHandler.RegisterRoutes(r, jwtMiddleware)
 	authHandler.RegisterRoutes(r)
 
 	log.Fatal(r.Run(":3000"))

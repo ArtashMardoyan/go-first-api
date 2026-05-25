@@ -50,6 +50,11 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
+	if u.Status == user.StatusDeactivated {
+		response.Error(c, http.StatusForbidden, "account is deactivated")
+		return
+	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
 		UserID: u.ID,
 		RegisteredClaims: jwt.RegisteredClaims{
