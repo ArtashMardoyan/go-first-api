@@ -1,6 +1,7 @@
 package user
 
-// аналог @Injectable() Service в NestJS
+import "go-first-api/pkg/pagination"
+
 type Service struct {
 	repo *Repository
 }
@@ -9,8 +10,9 @@ func NewService(repo *Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) FindAll() []User {
-	return s.repo.FindAll()
+func (s *Service) FindAll(q pagination.Query) pagination.Result[User] {
+	users, total := s.repo.FindAll(q)
+	return pagination.NewResult(users, total, q)
 }
 
 func (s *Service) FindOne(id string) (User, error) {

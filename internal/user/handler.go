@@ -4,12 +4,14 @@ import (
 	"errors"
 	"net/http"
 
+	"go-first-api/pkg/pagination"
+	"go-first-api/pkg/response"
+
 	"github.com/gin-gonic/gin"
 )
 
 type Middleware = gin.HandlerFunc
 
-// аналог @Controller() в NestJS
 type Handler struct {
 	service *Service
 }
@@ -30,30 +32,36 @@ func (h *Handler) RegisterRoutes(r *gin.Engine, authMiddleware Middleware) {
 }
 
 func (h *Handler) FindAll(c *gin.Context) {
-	c.JSON(http.StatusOK, h.service.FindAll())
+	var q pagination.Query
+	if err := c.ShouldBindQuery(&q); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	q.Normalize()
+	c.JSON(http.StatusOK, h.service.FindAll(q))
 }
 
 func (h *Handler) FindOne(c *gin.Context) {
 	user, err := h.service.FindOne(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
+		response.Error(c, http.StatusNotFound, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, user)
+	response.OK(c, user)
 }
 
 func (h *Handler) Create(c *gin.Context) {
 	var dto CreateUserDto
 	if err := c.ShouldBindJSON(&dto); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		response.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	user, err := h.service.Create(dto)
 	if err != nil {
-		c.JSON(statusFromErr(err), gin.H{"message": err.Error()})
+		response.Error(c, statusFromErr(err), err.Error())
 		return
 	}
-	c.JSON(http.StatusCreated, user)
+	response.Created(c, user)
 }
 
 func contextUser(c *gin.Context) User {
@@ -64,26 +72,25 @@ func contextUser(c *gin.Context) User {
 func (h *Handler) Update(c *gin.Context) {
 	var dto UpdateUserDto
 	if err := c.ShouldBindJSON(&dto); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		response.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	user, err := h.service.Update(contextUser(c).ID, dto)
 	if err != nil {
-		c.JSON(statusFromErr(err), gin.H{"message": err.Error()})
+		response.Error(c, statusFromErr(err), err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, user)
+	response.OK(c, user)
 }
 
 func (h *Handler) Delete(c *gin.Context) {
 	if err := h.service.Delete(contextUser(c).ID); err != nil {
-		c.JSON(statusFromErr(err), gin.H{"message": err.Error()})
+		response.Error(c, statusFromErr(err), err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "deleted"})
+	response.OK(c, gin.H{"message": "deleted"})
 }
 
-// statusFromErr — маппинг ошибок на HTTP-статусы, аналог ExceptionFilter в NestJS
 func statusFromErr(err error) int {
 	switch {
 	case errors.Is(err, ErrNotFound):

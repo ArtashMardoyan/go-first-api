@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"go-first-api/internal/user"
+	"go-first-api/pkg/response"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -34,18 +35,18 @@ func (h *Handler) RegisterRoutes(r *gin.Engine) {
 func (h *Handler) Login(c *gin.Context) {
 	var dto LoginDto
 	if err := c.ShouldBindJSON(&dto); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		response.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	u, err := h.userService.FindByEmail(dto.Email)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"message": ErrInvalidCredentials.Error()})
+		response.Error(c, http.StatusUnauthorized, ErrInvalidCredentials.Error())
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(dto.Password)); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"message": ErrInvalidCredentials.Error()})
+		response.Error(c, http.StatusUnauthorized, ErrInvalidCredentials.Error())
 		return
 	}
 
@@ -58,14 +59,14 @@ func (h *Handler) Login(c *gin.Context) {
 
 	signed, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "failed to generate token"})
+		response.Error(c, http.StatusInternalServerError, "failed to generate token")
 		return
 	}
 
-	c.JSON(http.StatusOK, TokenResponse{AccessToken: signed})
+	response.OK(c, LoginResponse{AccessToken: signed, User: u})
 }
 
 func (h *Handler) Me(c *gin.Context) {
 	u, _ := c.Get(ContextUser)
-	c.JSON(http.StatusOK, u)
+	response.OK(c, u)
 }

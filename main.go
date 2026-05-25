@@ -50,7 +50,7 @@ func main() {
 		c.Next()
 	})
 	userHandler.RegisterRoutes(r, auth.JWTMiddleware(userService))
-	postHandler.RegisterRoutes(r)
+	postHandler.RegisterRoutes(r, auth.JWTMiddleware(userService))
 	authHandler.RegisterRoutes(r)
 
 	log.Fatal(r.Run(":3000"))

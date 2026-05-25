@@ -3,6 +3,8 @@ package user
 import (
 	"errors"
 
+	"go-first-api/pkg/pagination"
+
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -19,10 +21,12 @@ func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) FindAll() []User {
+func (r *Repository) FindAll(q pagination.Query) ([]User, int64) {
 	var users []User
-	r.db.Find(&users)
-	return users
+	var total int64
+	r.db.Model(&User{}).Count(&total)
+	r.db.Offset(q.Offset()).Limit(q.Limit).Find(&users)
+	return users, total
 }
 
 func (r *Repository) FindByID(id string) (User, error) {
