@@ -1,4 +1,4 @@
-module go-user-api
+module go-first-api
 
 go 1.26.3
 
