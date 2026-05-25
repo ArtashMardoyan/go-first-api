@@ -1,6 +1,7 @@
 package post
 
 import (
+	"go-first-api/internal/modules/user"
 	"go-first-api/internal/shared"
 
 	"github.com/google/uuid"
@@ -9,11 +10,12 @@ import (
 
 type Post struct {
 	shared.Base
-	ID     string `json:"id"     gorm:"primaryKey"`
-	Title  string `json:"title"`
-	Body   string `json:"body"`
-	Status Status `json:"status" gorm:"default:unpublished"`
-	UserID string `json:"userId" gorm:"column:userId;index"`
+	ID     string    `json:"id"     gorm:"primaryKey"`
+	Title  string    `json:"title"`
+	Body   string    `json:"body"`
+	Status Status    `json:"status" gorm:"default:unpublished"`
+	UserID string    `json:"userId" gorm:"column:userId;index"`
+	User   user.User `json:"user"   gorm:"foreignKey:UserID"`
 }
 
 func (p *Post) BeforeCreate(_ *gorm.DB) error {

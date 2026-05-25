@@ -19,31 +19,40 @@ func NewRepository(db *gorm.DB) Repository {
 func (r *gormRepository) FindAll(ctx context.Context, q shared.PaginationQuery) ([]Post, int64, error) {
 	var posts []Post
 	var total int64
+
 	if err := r.db.WithContext(ctx).Model(&Post{}).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
-	if err := r.db.WithContext(ctx).Offset(q.Offset()).Limit(q.Limit).Find(&posts).Error; err != nil {
+
+	if err := r.db.WithContext(ctx).Preload("User").Offset(q.Offset()).Limit(q.Limit).Find(&posts).Error; err != nil {
 		return nil, 0, err
 	}
+
 	return posts, total, nil
 }
 
 func (r *gormRepository) FindByID(ctx context.Context, id string) (Post, error) {
 	var p Post
-	err := r.db.WithContext(ctx).First(&p, "id = ?", id).Error
+
+	err := r.db.WithContext(ctx).Preload("User").First(&p, "id = ?", id).Error
+
 	return p, err
 }
 
 func (r *gormRepository) FindByUserID(ctx context.Context, userID string, q shared.PaginationQuery) ([]Post, int64, error) {
 	var posts []Post
 	var total int64
+
 	base := r.db.WithContext(ctx).Model(&Post{}).Where(`"userId" = ?`, userID)
+
 	if err := base.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
-	if err := base.Offset(q.Offset()).Limit(q.Limit).Find(&posts).Error; err != nil {
+
+	if err := base.Preload("User").Offset(q.Offset()).Limit(q.Limit).Find(&posts).Error; err != nil {
 		return nil, 0, err
 	}
+
 	return posts, total, nil
 }
 

@@ -32,11 +32,13 @@ func (h *Handler) List(c *gin.Context) {
 		shared.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
+
 	result, err := h.service.FindAll(c.Request.Context(), q)
 	if err != nil {
 		shared.Error(c, http.StatusInternalServerError, "failed to fetch users")
 		return
 	}
+
 	shared.OK(c, "users retrieved", result)
 }
 
@@ -50,6 +52,7 @@ func (h *Handler) Get(c *gin.Context) {
 		shared.Error(c, http.StatusInternalServerError, "failed to fetch user")
 		return
 	}
+
 	shared.OK(c, "user retrieved", u)
 }
 
@@ -59,6 +62,7 @@ func (h *Handler) Create(c *gin.Context) {
 		shared.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
+
 	u, err := h.service.Create(c.Request.Context(), dto)
 	if err != nil {
 		if errors.Is(err, ErrEmailTaken) {
@@ -68,6 +72,7 @@ func (h *Handler) Create(c *gin.Context) {
 		shared.Error(c, http.StatusInternalServerError, "failed to create user")
 		return
 	}
+
 	shared.Created(c, "user created", u)
 }
 
@@ -77,11 +82,13 @@ func (h *Handler) Update(c *gin.Context) {
 		shared.Error(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
+
 	var dto UpdateDTO
 	if err := c.ShouldBindJSON(&dto); err != nil {
 		shared.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
+
 	u, err := h.service.Update(c.Request.Context(), caller.ID, dto)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
@@ -91,6 +98,7 @@ func (h *Handler) Update(c *gin.Context) {
 		shared.Error(c, http.StatusInternalServerError, "failed to update user")
 		return
 	}
+
 	shared.OK(c, "user updated", u)
 }
 
@@ -100,6 +108,7 @@ func (h *Handler) Delete(c *gin.Context) {
 		shared.Error(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
+
 	if err := h.service.Delete(c.Request.Context(), caller.ID); err != nil {
 		if errors.Is(err, ErrNotFound) {
 			shared.Error(c, http.StatusNotFound, "user not found")
@@ -108,6 +117,7 @@ func (h *Handler) Delete(c *gin.Context) {
 		shared.Error(c, http.StatusInternalServerError, "failed to delete user")
 		return
 	}
+
 	shared.OK(c, "user deleted", nil)
 }
 
@@ -116,6 +126,8 @@ func contextUser(c *gin.Context) (User, bool) {
 	if !exists {
 		return User{}, false
 	}
+
 	u, ok := val.(User)
+
 	return u, ok
 }

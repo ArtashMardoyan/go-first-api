@@ -25,10 +25,12 @@ func NewService(repo Repository) *Service {
 
 func (s *Service) FindAll(ctx context.Context, q shared.PaginationQuery) (shared.PaginatedResult[Post], error) {
 	q.Normalize()
+
 	posts, total, err := s.repo.FindAll(ctx, q)
 	if err != nil {
 		return shared.PaginatedResult[Post]{}, err
 	}
+
 	return shared.NewPaginatedResult(posts, total, q), nil
 }
 
@@ -37,15 +39,18 @@ func (s *Service) FindByID(ctx context.Context, id string) (Post, error) {
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return Post{}, ErrNotFound
 	}
+
 	return p, err
 }
 
 func (s *Service) FindByUserID(ctx context.Context, userID string, q shared.PaginationQuery) (shared.PaginatedResult[Post], error) {
 	q.Normalize()
+
 	posts, total, err := s.repo.FindByUserID(ctx, userID, q)
 	if err != nil {
 		return shared.PaginatedResult[Post]{}, err
 	}
+
 	return shared.NewPaginatedResult(posts, total, q), nil
 }
 
@@ -56,9 +61,11 @@ func (s *Service) Create(ctx context.Context, userID string, dto CreateDTO) (Pos
 		UserID: userID,
 		Status: StatusUnpublished,
 	}
+
 	if err := s.repo.Create(ctx, &p); err != nil {
 		return Post{}, err
 	}
+
 	return p, nil
 }
 
@@ -66,17 +73,22 @@ func (s *Service) UpdateStatus(ctx context.Context, id, callerID string, dto Upd
 	if !dto.Status.IsValid() {
 		return Post{}, ErrInvalidStatus
 	}
+
 	p, err := s.FindByID(ctx, id)
 	if err != nil {
 		return Post{}, err
 	}
+
 	if p.UserID != callerID {
 		return Post{}, ErrForbidden
 	}
+
 	p.Status = dto.Status
+
 	if err := s.repo.Save(ctx, &p); err != nil {
 		return Post{}, err
 	}
+
 	return p, nil
 }
 
@@ -85,8 +97,10 @@ func (s *Service) Delete(ctx context.Context, id, callerID string) error {
 	if err != nil {
 		return err
 	}
+
 	if p.UserID != callerID {
 		return ErrForbidden
 	}
+
 	return s.repo.Delete(ctx, id)
 }

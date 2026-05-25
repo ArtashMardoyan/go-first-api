@@ -49,14 +49,17 @@ func (h *Handler) Login(c *gin.Context) {
 
 func (*Handler) Me(c *gin.Context) {
 	val, exists := c.Get(shared.ContextUserKey)
+
 	if !exists {
 		shared.Error(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
+
 	u, ok := val.(user.User)
 	if !ok {
 		shared.Error(c, http.StatusInternalServerError, "internal error")
 		return
 	}
+
 	shared.OK(c, "current user", u)
 }

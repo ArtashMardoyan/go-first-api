@@ -34,11 +34,13 @@ func (h *Handler) List(c *gin.Context) {
 		shared.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
+
 	result, err := h.service.FindAll(c.Request.Context(), q)
 	if err != nil {
 		shared.Error(c, http.StatusInternalServerError, "failed to fetch posts")
 		return
 	}
+
 	shared.OK(c, "posts retrieved", result)
 }
 
@@ -52,6 +54,7 @@ func (h *Handler) Get(c *gin.Context) {
 		shared.Error(c, http.StatusInternalServerError, "failed to fetch post")
 		return
 	}
+
 	shared.OK(c, "post retrieved", p)
 }
 
@@ -61,11 +64,13 @@ func (h *Handler) ListByUser(c *gin.Context) {
 		shared.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
+
 	result, err := h.service.FindByUserID(c.Request.Context(), c.Param("userId"), q)
 	if err != nil {
 		shared.Error(c, http.StatusInternalServerError, "failed to fetch posts")
 		return
 	}
+
 	shared.OK(c, "posts retrieved", result)
 }
 
@@ -75,16 +80,19 @@ func (h *Handler) Create(c *gin.Context) {
 		shared.Error(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
+
 	var dto CreateDTO
 	if err := c.ShouldBindJSON(&dto); err != nil {
 		shared.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
+
 	p, err := h.service.Create(c.Request.Context(), caller.ID, dto)
 	if err != nil {
 		shared.Error(c, http.StatusInternalServerError, "failed to create post")
 		return
 	}
+
 	shared.Created(c, "post created", p)
 }
 
@@ -94,11 +102,13 @@ func (h *Handler) UpdateStatus(c *gin.Context) {
 		shared.Error(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
+
 	var dto UpdateStatusDTO
 	if err := c.ShouldBindJSON(&dto); err != nil {
 		shared.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
+
 	p, err := h.service.UpdateStatus(c.Request.Context(), c.Param("id"), caller.ID, dto)
 	if err != nil {
 		switch {
@@ -113,6 +123,7 @@ func (h *Handler) UpdateStatus(c *gin.Context) {
 		}
 		return
 	}
+
 	shared.OK(c, "post updated", p)
 }
 
@@ -122,6 +133,7 @@ func (h *Handler) Delete(c *gin.Context) {
 		shared.Error(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
+
 	if err := h.service.Delete(c.Request.Context(), c.Param("id"), caller.ID); err != nil {
 		switch {
 		case errors.Is(err, ErrNotFound):
@@ -133,6 +145,7 @@ func (h *Handler) Delete(c *gin.Context) {
 		}
 		return
 	}
+
 	shared.OK(c, "post deleted", nil)
 }
 
@@ -141,6 +154,8 @@ func contextUser(c *gin.Context) (user.User, bool) {
 	if !exists {
 		return user.User{}, false
 	}
+
 	u, ok := val.(user.User)
+
 	return u, ok
 }
