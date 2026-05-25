@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"go-first-api/internal/user"
+	"go-first-api/internal/modules/user"
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"

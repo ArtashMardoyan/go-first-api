@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"go-first-api/internal/user"
+	"go-first-api/internal/modules/user"
 
 	"github.com/golang-jwt/jwt/v5"
 )

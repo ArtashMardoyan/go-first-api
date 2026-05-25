@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
+	"go-first-api/internal/modules/user"
 	"go-first-api/internal/shared"
-	"go-first-api/internal/user"
 
 	"github.com/gin-gonic/gin"
 )

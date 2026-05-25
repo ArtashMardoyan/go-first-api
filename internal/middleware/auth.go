@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"go-first-api/internal/modules/user"
 	"go-first-api/internal/shared"
-	"go-first-api/internal/user"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"

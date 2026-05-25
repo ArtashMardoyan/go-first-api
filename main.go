@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"os"
 
-	"go-first-api/internal/auth"
 	"go-first-api/internal/database"
 	"go-first-api/internal/middleware"
-	"go-first-api/internal/post"
-	"go-first-api/internal/user"
+	"go-first-api/internal/modules/auth"
+	"go-first-api/internal/modules/post"
+	"go-first-api/internal/modules/user"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
