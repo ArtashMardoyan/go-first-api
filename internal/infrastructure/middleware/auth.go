@@ -3,7 +3,6 @@ package middleware
 import (
 	"errors"
 	"net/http"
-	"os"
 	"strings"
 
 	"go-first-api/internal/modules/user"
@@ -18,7 +17,8 @@ type jwtClaims struct {
 	jwt.RegisteredClaims
 }
 
-func JWT(userRepo user.Repository) gin.HandlerFunc {
+func JWT(userRepo user.Repository, jwtSecret string) gin.HandlerFunc {
+	secret := []byte(jwtSecret)
 	return func(c *gin.Context) {
 		header := c.GetHeader("Authorization")
 		if !strings.HasPrefix(header, "Bearer ") {
@@ -33,7 +33,7 @@ func JWT(userRepo user.Repository) gin.HandlerFunc {
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, errors.New("unexpected signing method")
 			}
-			return []byte(os.Getenv("JWT_SECRET")), nil
+			return secret, nil
 		})
 
 		if err != nil || !token.Valid {

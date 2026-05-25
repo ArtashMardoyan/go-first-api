@@ -3,28 +3,24 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 
-	"go-first-api/internal/database"
-	"go-first-api/internal/middleware"
+	"go-first-api/internal/config"
+	"go-first-api/internal/infrastructure/database"
+	"go-first-api/internal/infrastructure/middleware"
 	"go-first-api/internal/modules/auth"
 	"go-first-api/internal/modules/post"
 	"go-first-api/internal/modules/user"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	if err := godotenv.Load(); err != nil {
-		log.Println("no .env file, reading from environment")
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	if os.Getenv("JWT_SECRET") == "" {
-		log.Fatal("JWT_SECRET is not set")
-	}
-
-	db, err := database.Connect()
+	db, err := database.Connect(&cfg.DB)
 	if err != nil {
 		log.Fatal("failed to connect to database: ", err)
 	}
@@ -34,17 +30,13 @@ func main() {
 	}
 
 	userRepo := user.NewRepository(db)
-	userService := user.NewService(userRepo)
-	userHandler := user.NewHandler(userService)
+	userHandler := user.NewHandler(user.NewService(userRepo))
 
-	postRepo := post.NewRepository(db)
-	postService := post.NewService(postRepo)
-	postHandler := post.NewHandler(postService)
+	postHandler := post.NewHandler(post.NewService(post.NewRepository(db)))
 
-	authService := auth.NewService(userRepo, os.Getenv("JWT_SECRET"))
-	authHandler := auth.NewHandler(authService)
+	authHandler := auth.NewHandler(auth.NewService(userRepo, cfg.JWT.Secret))
 
-	jwtMiddleware := middleware.JWT(userRepo)
+	jwtMiddleware := middleware.JWT(userRepo, cfg.JWT.Secret)
 
 	r := gin.Default()
 	r.Use(func(c *gin.Context) {
@@ -56,5 +48,5 @@ func main() {
 	userHandler.RegisterRoutes(r, jwtMiddleware)
 	postHandler.RegisterRoutes(r, jwtMiddleware)
 
-	log.Fatal(r.Run(":3000"))
+	log.Fatal(r.Run(cfg.Server.Addr))
 }
