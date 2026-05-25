@@ -1,8 +1,9 @@
 package auth
 
 import (
-	"github.com/golang-jwt/jwt/v5"
 	"go-first-api/internal/user"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type LoginDto struct {

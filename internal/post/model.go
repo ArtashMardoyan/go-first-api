@@ -1,6 +1,9 @@
 package post
 
+import "go-first-api/pkg/model"
+
 type Post struct {
+	model.Base
 	ID     string `json:"id"     gorm:"primaryKey"`
 	Title  string `json:"title"`
 	Body   string `json:"body"`

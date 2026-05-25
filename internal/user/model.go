@@ -1,10 +1,14 @@
 package user
 
+import "go-first-api/pkg/model"
+
 type User struct {
+	model.Base
 	ID       string `json:"id"       gorm:"primaryKey"`
 	Name     string `json:"name"`
 	Email    string `json:"email"    gorm:"uniqueIndex"`
 	Age      int    `json:"age"`
+	Status   Status `json:"status"   gorm:"default:activated"`
 	Password string `json:"-"`
 }
 
