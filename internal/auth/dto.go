@@ -6,12 +6,12 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type LoginDto struct {
+type LoginDTO struct {
 	Email    string `json:"email"    binding:"required,email"`
 	Password string `json:"password" binding:"required"`
 }
 
-type LoginResponse struct {
+type LoginResponseDTO struct {
 	AccessToken string    `json:"accessToken"`
 	User        user.User `json:"user"`
 }

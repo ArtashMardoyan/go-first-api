@@ -1,19 +1,18 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
 
 	"go-first-api/internal/auth"
+	"go-first-api/internal/database"
+	"go-first-api/internal/middleware"
 	"go-first-api/internal/post"
 	"go-first-api/internal/user"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
 func main() {
@@ -21,16 +20,11 @@ func main() {
 		log.Println("no .env file, reading from environment")
 	}
 
-	dsn := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_PORT"),
-		os.Getenv("DB_NAME"),
-	)
+	if os.Getenv("JWT_SECRET") == "" {
+		log.Fatal("JWT_SECRET is not set")
+	}
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := database.Connect()
 	if err != nil {
 		log.Fatal("failed to connect to database: ", err)
 	}
@@ -39,25 +33,28 @@ func main() {
 		log.Fatal("failed to migrate: ", err)
 	}
 
-	if os.Getenv("JWT_SECRET") == "" {
-		log.Fatal("JWT_SECRET is not set")
-	}
-
-	userService := user.NewService(user.NewRepository(db))
+	userRepo := user.NewRepository(db)
+	userService := user.NewService(userRepo)
 	userHandler := user.NewHandler(userService)
-	postHandler := post.NewHandler(post.NewService(post.NewRepository(db)))
-	authHandler := auth.NewHandler(userService)
 
-	jwtMiddleware := auth.JWTMiddleware(userService)
+	postRepo := post.NewRepository(db)
+	postService := post.NewService(postRepo)
+	postHandler := post.NewHandler(postService)
+
+	authService := auth.NewService(userRepo)
+	authHandler := auth.NewHandler(authService)
+
+	jwtMiddleware := middleware.JWT(userRepo)
 
 	r := gin.Default()
 	r.Use(func(c *gin.Context) {
 		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 1<<20)
 		c.Next()
 	})
+
+	authHandler.RegisterRoutes(r, jwtMiddleware)
 	userHandler.RegisterRoutes(r, jwtMiddleware)
 	postHandler.RegisterRoutes(r, jwtMiddleware)
-	authHandler.RegisterRoutes(r)
 
 	log.Fatal(r.Run(":3000"))
 }

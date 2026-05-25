@@ -4,13 +4,10 @@ import (
 	"errors"
 	"net/http"
 
-	"go-first-api/pkg/pagination"
-	"go-first-api/pkg/response"
+	"go-first-api/internal/shared"
 
 	"github.com/gin-gonic/gin"
 )
-
-type Middleware = gin.HandlerFunc
 
 type Handler struct {
 	service *Service
@@ -20,98 +17,107 @@ func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
 }
 
-func (h *Handler) RegisterRoutes(r *gin.Engine, authMiddleware Middleware) {
-	users := r.Group("/users")
+func (h *Handler) RegisterRoutes(r *gin.Engine, auth gin.HandlerFunc) {
+	users := r.Group("/users", auth)
 	{
-		users.GET("", authMiddleware, h.FindAll)
-		users.GET("/:id", authMiddleware, h.FindOne)
+		users.GET("", h.List)
+		users.GET("/:id", h.Get)
 		users.POST("", h.Create)
-		users.PATCH("", authMiddleware, h.Update)
-		users.DELETE("", authMiddleware, h.Delete)
+		users.PATCH("", h.Update)
+		users.DELETE("", h.Delete)
 	}
 }
 
-func (h *Handler) FindAll(c *gin.Context) {
-	var q pagination.Query
+func (h *Handler) List(c *gin.Context) {
+	var q shared.PaginationQuery
 	if err := c.ShouldBindQuery(&q); err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+		shared.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	q.Normalize()
-	c.JSON(http.StatusOK, h.service.FindAll(q))
+	result, err := h.service.FindAll(c.Request.Context(), q)
+	if err != nil {
+		shared.Error(c, http.StatusInternalServerError, "failed to fetch users")
+		return
+	}
+	shared.OK(c, "users retrieved", result)
 }
 
-func (h *Handler) FindOne(c *gin.Context) {
-	user, err := h.service.FindOne(c.Param("id"))
+func (h *Handler) Get(c *gin.Context) {
+	u, err := h.service.FindByID(c.Request.Context(), c.Param("id"))
 	if err != nil {
-		response.Error(c, http.StatusNotFound, err.Error())
+		if errors.Is(err, ErrNotFound) {
+			shared.Error(c, http.StatusNotFound, "user not found")
+			return
+		}
+		shared.Error(c, http.StatusInternalServerError, "failed to fetch user")
 		return
 	}
-	response.OK(c, user)
+	shared.OK(c, "user retrieved", u)
 }
 
 func (h *Handler) Create(c *gin.Context) {
-	var dto CreateUserDto
+	var dto CreateDTO
 	if err := c.ShouldBindJSON(&dto); err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+		shared.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	user, err := h.service.Create(dto)
+	u, err := h.service.Create(c.Request.Context(), dto)
 	if err != nil {
-		response.Error(c, statusFromErr(err), err.Error())
+		if errors.Is(err, ErrEmailTaken) {
+			shared.Error(c, http.StatusConflict, err.Error())
+			return
+		}
+		shared.Error(c, http.StatusInternalServerError, "failed to create user")
 		return
 	}
-	response.Created(c, user)
-}
-
-func contextUser(c *gin.Context) (User, bool) {
-	u, ok := c.Get("user")
-	if !ok {
-		return User{}, false
-	}
-	user, ok := u.(User)
-	return user, ok
+	shared.Created(c, "user created", u)
 }
 
 func (h *Handler) Update(c *gin.Context) {
-	cu, ok := contextUser(c)
+	caller, ok := contextUser(c)
 	if !ok {
-		response.Error(c, http.StatusUnauthorized, "unauthorized")
+		shared.Error(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
-	var dto UpdateUserDto
+	var dto UpdateDTO
 	if err := c.ShouldBindJSON(&dto); err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+		shared.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	user, err := h.service.Update(cu.ID, dto)
+	u, err := h.service.Update(c.Request.Context(), caller.ID, dto)
 	if err != nil {
-		response.Error(c, statusFromErr(err), err.Error())
+		if errors.Is(err, ErrNotFound) {
+			shared.Error(c, http.StatusNotFound, "user not found")
+			return
+		}
+		shared.Error(c, http.StatusInternalServerError, "failed to update user")
 		return
 	}
-	response.OK(c, user)
+	shared.OK(c, "user updated", u)
 }
 
 func (h *Handler) Delete(c *gin.Context) {
-	cu, ok := contextUser(c)
+	caller, ok := contextUser(c)
 	if !ok {
-		response.Error(c, http.StatusUnauthorized, "unauthorized")
+		shared.Error(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
-	if err := h.service.Delete(cu.ID); err != nil {
-		response.Error(c, statusFromErr(err), err.Error())
+	if err := h.service.Delete(c.Request.Context(), caller.ID); err != nil {
+		if errors.Is(err, ErrNotFound) {
+			shared.Error(c, http.StatusNotFound, "user not found")
+			return
+		}
+		shared.Error(c, http.StatusInternalServerError, "failed to delete user")
 		return
 	}
-	response.OK(c, gin.H{"message": "deleted"})
+	shared.OK(c, "user deleted", nil)
 }
 
-func statusFromErr(err error) int {
-	switch {
-	case errors.Is(err, ErrNotFound):
-		return http.StatusNotFound
-	case errors.Is(err, ErrEmailTaken):
-		return http.StatusConflict
-	default:
-		return http.StatusInternalServerError
+func contextUser(c *gin.Context) (User, bool) {
+	val, exists := c.Get(shared.ContextUserKey)
+	if !exists {
+		return User{}, false
 	}
+	u, ok := val.(User)
+	return u, ok
 }
