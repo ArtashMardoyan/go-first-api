@@ -20,10 +20,8 @@ func NewHandler(service *Service) *Handler {
 
 func (h *Handler) RegisterRoutes(r *gin.Engine, auth gin.HandlerFunc) {
 	group := r.Group("/auth")
-	{
-		group.POST("/login", h.Login)
-		group.GET("/me", auth, h.Me)
-	}
+	group.POST("/login", h.Login)
+	group.GET("/me", auth, h.Me)
 }
 
 func (h *Handler) Login(c *gin.Context) {
@@ -35,26 +33,30 @@ func (h *Handler) Login(c *gin.Context) {
 
 	result, err := h.service.Login(c.Request.Context(), dto)
 	if err != nil {
-		if errors.Is(err, ErrInvalidCredentials) {
-			shared.Error(c, http.StatusUnauthorized, err.Error())
-			return
+		switch {
+		case errors.Is(err, ErrInvalidCredentials):
+			shared.Error(c, http.StatusUnauthorized, "invalid credentials")
+		case errors.Is(err, ErrAccountDeactivated):
+			shared.Error(c, http.StatusForbidden, "account is deactivated")
+		default:
+			shared.Error(c, http.StatusInternalServerError, "login failed")
 		}
-		if err.Error() == "account is deactivated" {
-			shared.Error(c, http.StatusForbidden, err.Error())
-			return
-		}
-		shared.Error(c, http.StatusInternalServerError, "login failed")
 		return
 	}
 
 	shared.OK(c, "login successful", result)
 }
 
-func (h *Handler) Me(c *gin.Context) {
+func (*Handler) Me(c *gin.Context) {
 	val, exists := c.Get(shared.ContextUserKey)
 	if !exists {
 		shared.Error(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
-	shared.OK(c, "current user", val.(user.User))
+	u, ok := val.(user.User)
+	if !ok {
+		shared.Error(c, http.StatusInternalServerError, "internal error")
+		return
+	}
+	shared.OK(c, "current user", u)
 }

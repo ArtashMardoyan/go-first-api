@@ -62,7 +62,7 @@ func (s *Service) Create(ctx context.Context, userID string, dto CreateDTO) (Pos
 	return p, nil
 }
 
-func (s *Service) UpdateStatus(ctx context.Context, id string, callerID string, dto UpdateStatusDTO) (Post, error) {
+func (s *Service) UpdateStatus(ctx context.Context, id, callerID string, dto UpdateStatusDTO) (Post, error) {
 	if !dto.Status.IsValid() {
 		return Post{}, ErrInvalidStatus
 	}
@@ -80,7 +80,7 @@ func (s *Service) UpdateStatus(ctx context.Context, id string, callerID string, 
 	return p, nil
 }
 
-func (s *Service) Delete(ctx context.Context, id string, callerID string) error {
+func (s *Service) Delete(ctx context.Context, id, callerID string) error {
 	p, err := s.FindByID(ctx, id)
 	if err != nil {
 		return err

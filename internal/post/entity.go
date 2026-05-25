@@ -16,7 +16,7 @@ type Post struct {
 	UserID string `json:"userId" gorm:"column:userId;index"`
 }
 
-func (p *Post) BeforeCreate(tx *gorm.DB) error {
+func (p *Post) BeforeCreate(_ *gorm.DB) error {
 	if p.ID == "" {
 		p.ID = uuid.NewString()
 	}

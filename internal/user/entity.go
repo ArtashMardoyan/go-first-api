@@ -17,7 +17,7 @@ type User struct {
 	Password string `json:"-"`
 }
 
-func (u *User) BeforeCreate(tx *gorm.DB) error {
+func (u *User) BeforeCreate(_ *gorm.DB) error {
 	if u.ID == "" {
 		u.ID = uuid.NewString()
 	}

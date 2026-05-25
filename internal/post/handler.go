@@ -20,14 +20,12 @@ func NewHandler(service *Service) *Handler {
 
 func (h *Handler) RegisterRoutes(r *gin.Engine, auth gin.HandlerFunc) {
 	posts := r.Group("/posts", auth)
-	{
-		posts.GET("", h.List)
-		posts.GET("/:id", h.Get)
-		posts.GET("/user/:userId", h.ListByUser)
-		posts.POST("", h.Create)
-		posts.PATCH("/:id/status", h.UpdateStatus)
-		posts.DELETE("/:id", h.Delete)
-	}
+	posts.GET("", h.List)
+	posts.GET("/:id", h.Get)
+	posts.GET("/user/:userId", h.ListByUser)
+	posts.POST("", h.Create)
+	posts.PATCH("/:id/status", h.UpdateStatus)
+	posts.DELETE("/:id", h.Delete)
 }
 
 func (h *Handler) List(c *gin.Context) {

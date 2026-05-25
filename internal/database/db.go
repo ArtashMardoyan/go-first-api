@@ -17,5 +17,6 @@ func Connect() (*gorm.DB, error) {
 		os.Getenv("DB_PORT"),
 		os.Getenv("DB_NAME"),
 	)
+
 	return gorm.Open(postgres.Open(dsn), &gorm.Config{})
 }

@@ -19,13 +19,11 @@ func NewHandler(service *Service) *Handler {
 
 func (h *Handler) RegisterRoutes(r *gin.Engine, auth gin.HandlerFunc) {
 	users := r.Group("/users", auth)
-	{
-		users.GET("", h.List)
-		users.GET("/:id", h.Get)
-		users.POST("", h.Create)
-		users.PATCH("", h.Update)
-		users.DELETE("", h.Delete)
-	}
+	users.GET("", h.List)
+	users.GET("/:id", h.Get)
+	users.POST("", h.Create)
+	users.PATCH("", h.Update)
+	users.DELETE("", h.Delete)
 }
 
 func (h *Handler) List(c *gin.Context) {

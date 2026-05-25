@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"errors"
-	"os"
 	"time"
 
 	"go-first-api/internal/user"
@@ -12,14 +11,18 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var ErrInvalidCredentials = errors.New("invalid credentials")
+var (
+	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrAccountDeactivated = errors.New("account is deactivated")
+)
 
 type Service struct {
-	userRepo user.Repository
+	userRepo  user.Repository
+	jwtSecret []byte
 }
 
-func NewService(userRepo user.Repository) *Service {
-	return &Service{userRepo: userRepo}
+func NewService(userRepo user.Repository, jwtSecret string) *Service {
+	return &Service{userRepo: userRepo, jwtSecret: []byte(jwtSecret)}
 }
 
 func (s *Service) Login(ctx context.Context, dto LoginDTO) (LoginResponseDTO, error) {
@@ -33,7 +36,7 @@ func (s *Service) Login(ctx context.Context, dto LoginDTO) (LoginResponseDTO, er
 	}
 
 	if u.Status == user.StatusDeactivated {
-		return LoginResponseDTO{}, errors.New("account is deactivated")
+		return LoginResponseDTO{}, ErrAccountDeactivated
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
@@ -43,7 +46,7 @@ func (s *Service) Login(ctx context.Context, dto LoginDTO) (LoginResponseDTO, er
 		},
 	})
 
-	signed, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+	signed, err := token.SignedString(s.jwtSecret)
 	if err != nil {
 		return LoginResponseDTO{}, err
 	}

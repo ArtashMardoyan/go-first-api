@@ -1,0 +1,82 @@
+version: "2"
+
+formatters:
+  enable:
+    - gofumpt       # stricter gofmt: blank lines, grouping, trailing newlines  (= prettier)
+    - goimports     # organizes imports into 3 groups (stdlib / external / internal)
+  settings:
+    goimports:
+      local-prefixes: go-first-api
+    gofumpt:
+      module-path: go-first-api
+      extra-rules: true
+
+linters:
+  enable:
+    # --- Correctness (= @typescript-eslint/recommended) ---
+    - govet         # built-in: shadowing, printf mismatches, unreachable code
+    - staticcheck   # deep static analysis: nil deref, deprecated, unused results
+    - unused        # flags unexported identifiers that are never used
+
+    # --- Error handling (= no unhandled promise rejections) ---
+    - errcheck      # every error return must be checked
+    - errorlint     # enforces errors.Is / errors.As — bans err.Error() == "..." comparisons
+
+    # --- Naming & style (= @typescript-eslint/naming-convention) ---
+    - revive        # var-naming, early-return, error-naming, superfluous-else
+    # stylecheck is now part of staticcheck (ST1003, ST1006, etc.)
+
+    # --- Security ---
+    - gosec         # hardcoded secrets, weak crypto, unhandled errors in closures
+
+    # --- Code quality ---
+    - gocritic      # simplifications, performance, style
+    - bodyclose     # http response body must be closed
+    - noctx         # http requests must use context
+
+  settings:
+    # --- Naming rules (= @typescript-eslint/naming-convention) ---
+    revive:
+      rules:
+        - name: var-naming              # camelCase vars, no Hungarian notation
+        - name: error-return            # error must be last return value
+        - name: error-naming            # error vars must start with Err
+        - name: error-strings           # error strings must not be capitalized
+        - name: increment-decrement     # use i++ not i += 1
+        - name: early-return            # reduce nesting, return early
+        - name: unused-parameter
+        - name: superfluous-else        # remove else after return
+        - name: unused-receiver
+        - name: exported
+          disabled: true               # enable later when adding godoc comments
+
+    gosec:
+      excludes:
+        - G104  # unhandled errors — covered by errcheck to avoid duplicates
+
+    errorlint:
+      errorf: true
+      asserts: true
+      comparison: true
+
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - style
+        - performance
+      disabled-checks:
+        - paramTypeCombine
+
+  exclusions:
+    rules:
+      # Test files: relax errcheck and gosec
+      - path: "_test\\.go"
+        linters:
+          - errcheck
+          - gosec
+    paths:
+      - vendor
+
+run:
+  timeout: 5m
+  modules-download-mode: readonly

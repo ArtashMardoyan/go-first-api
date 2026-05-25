@@ -41,7 +41,7 @@ func main() {
 	postService := post.NewService(postRepo)
 	postHandler := post.NewHandler(postService)
 
-	authService := auth.NewService(userRepo)
+	authService := auth.NewService(userRepo, os.Getenv("JWT_SECRET"))
 	authHandler := auth.NewHandler(authService)
 
 	jwtMiddleware := middleware.JWT(userRepo)
