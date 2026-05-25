@@ -4,13 +4,11 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
-// ErrNotFound — sentinel error, аналог NotFoundException в NestJS
 var ErrNotFound = errors.New("user not found")
-
-// ErrEmailTaken — возвращается когда email уже занят другим пользователем
 var ErrEmailTaken = errors.New("email already taken")
 
 type Repository struct {
@@ -38,6 +36,17 @@ func (r *Repository) FindByID(id string) (User, error) {
 	return u, nil
 }
 
+func (r *Repository) FindByEmail(email string) (User, error) {
+	var u User
+	if err := r.db.First(&u, "email = ?", email).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return User{}, ErrNotFound
+		}
+		return User{}, err
+	}
+	return u, nil
+}
+
 func (r *Repository) Create(dto CreateUserDto) (User, error) {
 	var count int64
 	r.db.Model(&User{}).Where("email = ?", dto.Email).Count(&count)
@@ -45,11 +54,17 @@ func (r *Repository) Create(dto CreateUserDto) (User, error) {
 		return User{}, ErrEmailTaken
 	}
 
+	hashed, err := bcrypt.GenerateFromPassword([]byte(dto.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return User{}, err
+	}
+
 	u := User{
-		ID:    uuid.NewString(),
-		Name:  dto.Name,
-		Email: dto.Email,
-		Age:   dto.Age,
+		ID:       uuid.NewString(),
+		Name:     dto.Name,
+		Email:    dto.Email,
+		Age:      dto.Age,
+		Password: string(hashed),
 	}
 	if err := r.db.Create(&u).Error; err != nil {
 		return User{}, err
@@ -66,14 +81,6 @@ func (r *Repository) Update(id string, dto UpdateUserDto) (User, error) {
 		return User{}, err
 	}
 
-	if dto.Email != "" && dto.Email != u.Email {
-		var count int64
-		r.db.Model(&User{}).Where("email = ?", dto.Email).Count(&count)
-		if count > 0 {
-			return User{}, ErrEmailTaken
-		}
-		u.Email = dto.Email
-	}
 	if dto.Name != "" {
 		u.Name = dto.Name
 	}

@@ -17,6 +17,10 @@ func (s *Service) FindOne(id string) (User, error) {
 	return s.repo.FindByID(id)
 }
 
+func (s *Service) FindByEmail(email string) (User, error) {
+	return s.repo.FindByEmail(email)
+}
+
 func (s *Service) Create(dto CreateUserDto) (User, error) {
 	return s.repo.Create(dto)
 }

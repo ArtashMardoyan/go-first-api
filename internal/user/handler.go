@@ -7,6 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type Middleware = gin.HandlerFunc
+
 // аналог @Controller() в NestJS
 type Handler struct {
 	service *Service
@@ -16,14 +18,14 @@ func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
 }
 
-func (h *Handler) RegisterRoutes(r *gin.Engine) {
+func (h *Handler) RegisterRoutes(r *gin.Engine, authMiddleware Middleware) {
 	users := r.Group("/users")
 	{
-		users.GET("", h.FindAll)
-		users.GET("/:id", h.FindOne)
+		users.GET("", authMiddleware, h.FindAll)
+		users.GET("/:id", authMiddleware, h.FindOne)
 		users.POST("", h.Create)
-		users.PATCH("/:id", h.Update)
-		users.DELETE("/:id", h.Delete)
+		users.PATCH("", authMiddleware, h.Update)
+		users.DELETE("", authMiddleware, h.Delete)
 	}
 }
 
@@ -54,13 +56,18 @@ func (h *Handler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, user)
 }
 
+func contextUser(c *gin.Context) User {
+	u, _ := c.Get("user")
+	return u.(User)
+}
+
 func (h *Handler) Update(c *gin.Context) {
 	var dto UpdateUserDto
 	if err := c.ShouldBindJSON(&dto); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	user, err := h.service.Update(c.Param("id"), dto)
+	user, err := h.service.Update(contextUser(c).ID, dto)
 	if err != nil {
 		c.JSON(statusFromErr(err), gin.H{"message": err.Error()})
 		return
@@ -69,7 +76,7 @@ func (h *Handler) Update(c *gin.Context) {
 }
 
 func (h *Handler) Delete(c *gin.Context) {
-	if err := h.service.Delete(c.Param("id")); err != nil {
+	if err := h.service.Delete(contextUser(c).ID); err != nil {
 		c.JSON(statusFromErr(err), gin.H{"message": err.Error()})
 		return
 	}

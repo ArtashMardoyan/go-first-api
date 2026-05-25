@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 
+	"go-first-api/internal/auth"
+	"go-first-api/internal/post"
 	"go-first-api/internal/user"
 
 	"github.com/gin-gonic/gin"
@@ -33,21 +35,23 @@ func main() {
 		log.Fatal("failed to connect to database: ", err)
 	}
 
-	// AutoMigrate — аналог synchronize: true в TypeORM
-	if err := db.AutoMigrate(&user.User{}); err != nil {
+	if err := db.AutoMigrate(&user.User{}, &post.Post{}); err != nil {
 		log.Fatal("failed to migrate: ", err)
 	}
 
-	repo := user.NewRepository(db)
-	service := user.NewService(repo)
-	handler := user.NewHandler(service)
+	userService := user.NewService(user.NewRepository(db))
+	userHandler := user.NewHandler(userService)
+	postHandler := post.NewHandler(post.NewService(post.NewRepository(db)))
+	authHandler := auth.NewHandler(userService)
 
 	r := gin.Default()
 	r.Use(func(c *gin.Context) {
 		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 1<<20)
 		c.Next()
 	})
-	handler.RegisterRoutes(r)
+	userHandler.RegisterRoutes(r, auth.JWTMiddleware(userService))
+	postHandler.RegisterRoutes(r)
+	authHandler.RegisterRoutes(r)
 
 	log.Fatal(r.Run(":3000"))
 }
