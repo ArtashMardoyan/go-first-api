@@ -14,7 +14,7 @@ func (q *PaginationQuery) Normalize() {
 	}
 }
 
-func (q PaginationQuery) Offset() int {
+func (q *PaginationQuery) Offset() int {
 	return (q.Page - 1) * q.Limit
 }
 

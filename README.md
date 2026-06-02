@@ -20,7 +20,7 @@ git clone https://github.com/ArtashMardoyan/go-first-api.git
 cd go-first-api
 ```
 
-### 2. Set up environment
+### 2. Set up the environment
 
 ```bash
 cp .env.example .env
@@ -75,10 +75,10 @@ Each module contains: `entity.go`, `dto.go`, `repository.go` (interface), `repos
 
 ### Auth
 
-| Method | URL        | Auth | Description        |
-|--------|------------|------|--------------------|
-| POST   | /auth/login | —   | Login, get JWT     |
-| GET    | /auth/me   | ✓    | Current user       |
+| Method | URL         | Auth | Description    |
+|--------|-------------|------|----------------|
+| POST   | /auth/login | —    | Login, get JWT |
+| GET    | /auth/me    | ✓    | Current user   |
 
 ### Users
 
@@ -155,7 +155,7 @@ curl -X POST http://localhost:3000/users \
   -d '{"name": "Artash", "email": "artash@example.com", "password": "password123", "age": 25}'
 ```
 
-**Create post (authenticated):**
+**Create a post (authenticated):**
 ```bash
 curl -X POST http://localhost:3000/posts \
   -H "Content-Type: application/json" \

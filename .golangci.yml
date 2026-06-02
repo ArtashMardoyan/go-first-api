@@ -2,7 +2,7 @@ version: "2"
 
 formatters:
   enable:
-    - gofumpt       # stricter gofmt: blank lines, grouping, trailing newlines  (= prettier)
+    - gofumpt       # stricter gofmt: blank lines, grouping, trailing newlines (= prettier)
     - goimports     # organizes imports into 3 groups (stdlib / external / internal)
   settings:
     goimports:
