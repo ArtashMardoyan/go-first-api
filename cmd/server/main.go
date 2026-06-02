@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 
@@ -12,6 +13,8 @@ import (
 	"go-first-api/internal/modules/user"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/pressly/goose/v3"
 )
 
 func main() {
@@ -20,13 +23,18 @@ func main() {
 		log.Fatal(err)
 	}
 
+	sqlDB, err := sql.Open("pgx", cfg.DB.DSN())
+	if err != nil {
+		log.Fatal("failed to open database: ", err)
+	}
+
+	if err := goose.Up(sqlDB, "migrations"); err != nil {
+		log.Fatal("failed to run migrations: ", err)
+	}
+
 	db, err := database.Connect(&cfg.DB)
 	if err != nil {
 		log.Fatal("failed to connect to database: ", err)
-	}
-
-	if err := db.AutoMigrate(&user.User{}, &post.Post{}); err != nil {
-		log.Fatal("failed to migrate: ", err)
 	}
 
 	userRepo := user.NewRepository(db)

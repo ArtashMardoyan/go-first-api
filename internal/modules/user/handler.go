@@ -41,7 +41,7 @@ func (h *Handler) List(c *gin.Context) {
 		return
 	}
 
-	shared.OK(c, "users retrieved", result)
+	shared.OK(c, result)
 }
 
 func (h *Handler) Get(c *gin.Context) {
@@ -55,7 +55,7 @@ func (h *Handler) Get(c *gin.Context) {
 		return
 	}
 
-	shared.OK(c, "user retrieved", u)
+	shared.OK(c, u)
 }
 
 func (h *Handler) Create(c *gin.Context) {
@@ -75,7 +75,7 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	shared.Created(c, "user created", u)
+	shared.Created(c, u)
 }
 
 func (h *Handler) Update(c *gin.Context) {
@@ -101,7 +101,7 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 
-	shared.OK(c, "user updated", u)
+	shared.OK(c, u)
 }
 
 func (h *Handler) Delete(c *gin.Context) {
@@ -120,7 +120,7 @@ func (h *Handler) Delete(c *gin.Context) {
 		return
 	}
 
-	shared.OK(c, "user deleted", nil)
+	shared.NoContent(c)
 }
 
 func contextUser(c *gin.Context) (User, bool) {

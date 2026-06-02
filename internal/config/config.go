@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
 
@@ -20,6 +21,13 @@ type DBConfig struct {
 	User     string
 	Password string
 	Name     string
+}
+
+func (c *DBConfig) DSN() string {
+	return fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		c.User, c.Password, c.Host, c.Port, c.Name,
+	)
 }
 
 type JWTConfig struct {

@@ -44,7 +44,7 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	shared.OK(c, "login successful", result)
+	shared.OK(c, result)
 }
 
 func (*Handler) Me(c *gin.Context) {
@@ -61,5 +61,5 @@ func (*Handler) Me(c *gin.Context) {
 		return
 	}
 
-	shared.OK(c, "current user", u)
+	shared.OK(c, u)
 }
