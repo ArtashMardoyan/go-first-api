@@ -43,7 +43,7 @@ JWT_SECRET=your_secret_key
 go run ./cmd/server/
 ```
 
-Server starts at `http://localhost:3000`. Database tables are created automatically via AutoMigrate.
+Server starts at `http://localhost:3000`. Migrations run automatically on startup via goose.
 
 ## Project structure
 
@@ -63,7 +63,7 @@ go-first-api/
 │   │   ├── user/                 # user CRUD
 │   │   └── post/                 # post CRUD
 │   └── shared/                   # response helpers, pagination, context keys
-├── migrations/
+├── migrations/               # SQL migration files (goose)
 ├── .env
 ├── .golangci.yml
 └── go.mod
@@ -105,29 +105,17 @@ Each module contains: `entity.go`, `dto.go`, `repository.go` (interface), `repos
 
 **Success:**
 ```json
-{
-  "success": true,
-  "message": "user retrieved",
-  "data": {},
-  "error": null
-}
+{ "data": {} }
 ```
 
 **Error:**
 ```json
-{
-  "success": false,
-  "message": "user not found",
-  "data": null,
-  "error": "user not found"
-}
+{ "error": "user not found" }
 ```
 
 **Paginated:**
 ```json
 {
-  "success": true,
-  "message": "posts retrieved",
   "data": {
     "items": [],
     "meta": {
@@ -138,6 +126,8 @@ Each module contains: `entity.go`, `dto.go`, `repository.go` (interface), `repos
   }
 }
 ```
+
+**DELETE** returns `204 No Content` with nobody.
 
 ## Example requests
 
