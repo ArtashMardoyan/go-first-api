@@ -34,8 +34,12 @@ DB_PORT=5432
 DB_USER=your_db_user
 DB_PASSWORD=your_db_password
 DB_NAME=go-first-api
+DB_SSLMODE=disable
 JWT_SECRET=your_secret_key
 ```
+
+`DB_SSLMODE` is optional (defaults to `disable`). Set it to `require` when connecting to a
+managed database that enforces SSL, such as AWS RDS.
 
 ### 3. Run
 
@@ -152,6 +156,16 @@ curl -X POST http://localhost:3000/posts \
   -H "Authorization: Bearer <token>" \
   -d '{"title": "Hello", "body": "My first post"}'
 ```
+
+## Docker
+
+```bash
+docker build -t go-first-api .
+docker run --rm -p 3000:3000 --env-file .env go-first-api
+```
+
+The image is a multi-stage build on a distroless base (static binary, non-root) and
+includes the `migrations/` folder, so migrations run on container startup.
 
 ## Development
 
