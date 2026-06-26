@@ -1,0 +1,9 @@
+.git
+.idea
+.vscode
+.env
+.env.example
+*.md
+__debug_bin*
+Dockerfile
+.dockerignore

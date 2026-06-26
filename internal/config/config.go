@@ -21,12 +21,13 @@ type DBConfig struct {
 	User     string
 	Password string
 	Name     string
+	SSLMode  string
 }
 
 func (c *DBConfig) DSN() string {
 	return fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		c.User, c.Password, c.Host, c.Port, c.Name,
+		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
+		c.User, c.Password, c.Host, c.Port, c.Name, c.SSLMode,
 	)
 }
 
@@ -48,6 +49,11 @@ func Load() (Config, error) {
 		return Config{}, errors.New("JWT_SECRET is not set")
 	}
 
+	sslMode := os.Getenv("DB_SSLMODE")
+	if sslMode == "" {
+		sslMode = "disable"
+	}
+
 	return Config{
 		DB: DBConfig{
 			Host:     os.Getenv("DB_HOST"),
@@ -55,6 +61,7 @@ func Load() (Config, error) {
 			User:     os.Getenv("DB_USER"),
 			Password: os.Getenv("DB_PASSWORD"),
 			Name:     os.Getenv("DB_NAME"),
+			SSLMode:  sslMode,
 		},
 		JWT:    JWTConfig{Secret: secret},
 		Server: ServerConfig{Addr: ":3000"},
