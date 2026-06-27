@@ -57,6 +57,7 @@ migrations/                  — SQL migration files (not yet wired)
 - `go-first-api.local.postman_environment.json` / `go-first-api.prod.postman_environment.json` — environments (display names "06.1 GO First API Local" / "06.2 GO First API Prod") with `API_URL`, `accessToken`, `userId`, `postId`, `userEmail`, `userName` (Local defaults `API_URL` to `http://localhost:3000`; Prod is left blank).
 
 Conventions for new requests:
+- **Order folders to match the module directories** (alphabetical: Auth, Health, Posts, Users).
 - **Order requests within each folder by method: GET → POST → PATCH → DELETE** (mirrors the Go handlers).
 - Auth is **collection-level** Bearer `{{accessToken}}`; requests inherit it. Public routes (login, create user) set `"auth": { "type": "noauth" }`.
 - Use `{{API_URL}}` as the base and `{{userId}}` / `{{postId}}` for path params; capture new ids in a `test` script via `pm.environment.set(...)`.
