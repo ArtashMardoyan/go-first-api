@@ -10,6 +10,8 @@ Gin + GORM + PostgreSQL REST API. Go 1.26.
 1. Describe the approach and list files to change
 2. Wait for user approval before writing any code
 
+**Keep the Postman collection in sync.** Whenever you add, remove, or change a route (method, path, request body, or query params), update `postman/go-first-api.postman_collection.json` in the same change — add/edit the matching request under the right folder. See "API documentation (Postman)" below.
+
 ## Commands
 
 ```bash
@@ -17,6 +19,8 @@ go run ./cmd/server/         # start server (port 3000)
 go build ./...               # compile check
 golangci-lint run            # lint
 golangci-lint fmt            # auto-fix formatting
+./scripts/deploy.sh          # full deploy: build → ECR push → App Runner → Postman sync
+./scripts/sync-postman.sh    # push Postman collection to the cloud workspace only
 ```
 
 ## Architecture
@@ -42,6 +46,21 @@ migrations/                  — SQL migration files (not yet wired)
 2. Add to `db.AutoMigrate(...)` in `cmd/server/main.go`
 3. Wire repo → service → handler in `main.go`
 4. Call `handler.RegisterRoutes(r, jwtMiddleware)`
+5. Add a folder + requests for the module's routes to `postman/go-first-api.postman_collection.json`
+
+## API documentation (Postman)
+
+`postman/` holds the importable API collection — keep it current whenever routes change.
+
+- `go-first-api.postman_collection.json` — requests grouped into folders per module (Auth, Users, Posts).
+- `scripts/sync-postman.sh` — pushes the collection to the Postman cloud workspace via the Postman API. Run `POSTMAN_API_KEY=PMAK-... ./scripts/sync-postman.sh` after editing the collection (or as a deploy step). The API key is read from the env, never hardcoded.
+- `go-first-api.local.postman_environment.json` / `go-first-api.prod.postman_environment.json` — environments (display names "06.1 GO First API Local" / "06.2 GO First API Prod") with `API_URL`, `accessToken`, `userId`, `postId`, `userEmail`, `userName` (Local defaults `API_URL` to `http://localhost:3000`; Prod is left blank).
+
+Conventions for new requests:
+- **Order requests within each folder by method: GET → POST → PATCH → DELETE** (mirrors the Go handlers).
+- Auth is **collection-level** Bearer `{{accessToken}}`; requests inherit it. Public routes (login, create user) set `"auth": { "type": "noauth" }`.
+- Use `{{API_URL}}` as the base and `{{userId}}` / `{{postId}}` for path params; capture new ids in a `test` script via `pm.environment.set(...)`.
+- Request bodies must match the DTO json tags exactly (lowercase: `name`, `email`, `title`, ...), satisfy validation (e.g. `password` min 8, `age` min 1), and use the real route (e.g. post status is `PATCH /posts/:id/status`).
 
 ## Code style
 

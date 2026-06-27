@@ -9,6 +9,7 @@ import (
 	"go-first-api/internal/infrastructure/database"
 	"go-first-api/internal/infrastructure/middleware"
 	"go-first-api/internal/modules/auth"
+	"go-first-api/internal/modules/health"
 	"go-first-api/internal/modules/post"
 	"go-first-api/internal/modules/user"
 
@@ -44,6 +45,8 @@ func main() {
 
 	authHandler := auth.NewHandler(auth.NewService(userRepo, cfg.JWT.Secret))
 
+	healthHandler := health.NewHandler()
+
 	jwtMiddleware := middleware.JWT(userRepo, cfg.JWT.Secret)
 
 	r := gin.Default()
@@ -52,6 +55,7 @@ func main() {
 		c.Next()
 	})
 
+	healthHandler.RegisterRoutes(r)
 	authHandler.RegisterRoutes(r, jwtMiddleware)
 	userHandler.RegisterRoutes(r, jwtMiddleware)
 	postHandler.RegisterRoutes(r, jwtMiddleware)

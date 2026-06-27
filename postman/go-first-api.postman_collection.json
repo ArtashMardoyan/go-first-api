@@ -1,0 +1,329 @@
+{
+	"info": {
+		"_postman_id": "99f0e83b-dcdd-43c2-9140-62cdc8c41b5f",
+		"name": "06.1 GO First API",
+		"description": "Gin + GORM + PostgreSQL REST API.\n\nRequests within each folder are ordered by method: GET → POST → PATCH → DELETE (matching the Go handlers).\n\nFirst-run setup (the chain populates env vars via test scripts):\n1. **Users > Create User** — random email/name (saved to `userEmail`), password `test1234`, captures `userId`.\n2. **Auth > Login** — logs in with `userEmail` / `test1234`, captures `accessToken` (+ `userId`).\n3. Everything else inherits the collection-level Bearer auth automatically.\n\nResponse envelope:\n```\n{ \"success\": true,  \"message\": \"...\", \"data\": {},   \"error\": null }\n{ \"success\": false, \"message\": \"...\", \"data\": null, \"error\": \"...\" }\n```\nPaginated data: `{ \"items\": [], \"meta\": { \"page\": 1, \"limit\": 10, \"total\": 100 } }`",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{ "key": "token", "value": "{{accessToken}}", "type": "string" }
+		]
+	},
+	"variable": [
+		{ "key": "API_URL", "value": "http://localhost:3000", "type": "string" }
+	],
+	"item": [
+		{
+			"name": "Health",
+			"item": [
+				{
+					"name": "Ping",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/ping",
+							"host": ["{{API_URL}}"],
+							"path": ["ping"]
+						},
+						"description": "Health check — returns { \"data\": \"pong\" } with HTTP 200 when the server is up. Public, no auth."
+					}
+				}
+			]
+		},
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Retrieve Me",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.data && res.data.id) {",
+									"    pm.environment.set('userId', res.data.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/auth/me",
+							"host": ["{{API_URL}}"],
+							"path": ["auth", "me"]
+						},
+						"description": "Return the currently authenticated user. `data` is the user object directly (not wrapped)."
+					}
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('login ok', () => pm.expect(pm.response.code).to.eql(200));",
+									"if (res.data && res.data.accessToken) {",
+									"    pm.environment.set('accessToken', res.data.accessToken);",
+									"    pm.environment.set('userId', res.data.user.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{userEmail}}\",\n    \"password\": \"test1234\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{API_URL}}/auth/login",
+							"host": ["{{API_URL}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Authenticate and receive a JWT. Saves `accessToken` and `userId` to the environment."
+					}
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "List Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/users?page=1&limit=10",
+							"host": ["{{API_URL}}"],
+							"path": ["users"],
+							"query": [
+								{ "key": "page", "value": "1" },
+								{ "key": "limit", "value": "10" }
+							]
+						},
+						"description": "Paginated list of users. limit max 100 (otherwise defaults to 10)."
+					}
+				},
+				{
+					"name": "Retrieve a User",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/users/{{userId}}",
+							"host": ["{{API_URL}}"],
+							"path": ["users", "{{userId}}"]
+						},
+						"description": "Fetch a single user by ID."
+					}
+				},
+				{
+					"name": "Create User",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.environment.set('userEmail', pm.variables.replaceIn('{{$randomEmail}}'));",
+									"pm.environment.set('userName', pm.variables.replaceIn('{{$randomFullName}}'));"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.data && res.data.id) {",
+									"    pm.environment.set('userId', res.data.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"{{userName}}\",\n    \"email\": \"{{userEmail}}\",\n    \"password\": \"test1234\",\n    \"age\": 25\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{API_URL}}/users",
+							"host": ["{{API_URL}}"],
+							"path": ["users"]
+						},
+						"description": "Public registration. Fields: name (min 2), email, password (min 8), age (min 1)."
+					}
+				},
+				{
+					"name": "Update User (self)",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"{{$randomFullName}}\",\n    \"age\": 31\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{API_URL}}/users",
+							"host": ["{{API_URL}}"],
+							"path": ["users"]
+						},
+						"description": "Update the authenticated user (id taken from the token, not the URL). Fields optional: name (min 2), age (min 1)."
+					}
+				},
+				{
+					"name": "Delete User (self)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/users",
+							"host": ["{{API_URL}}"],
+							"path": ["users"]
+						},
+						"description": "Delete the authenticated user. Returns 204."
+					}
+				}
+			]
+		},
+		{
+			"name": "Posts",
+			"item": [
+				{
+					"name": "List Posts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/posts?page=1&limit=10",
+							"host": ["{{API_URL}}"],
+							"path": ["posts"],
+							"query": [
+								{ "key": "page", "value": "1" },
+								{ "key": "limit", "value": "10" }
+							]
+						},
+						"description": "Paginated list of all posts."
+					}
+				},
+				{
+					"name": "Retrieve a Post",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/posts/{{postId}}",
+							"host": ["{{API_URL}}"],
+							"path": ["posts", "{{postId}}"]
+						},
+						"description": "Fetch a single post by ID."
+					}
+				},
+				{
+					"name": "List Posts by User",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/posts/user/{{userId}}?page=1&limit=10",
+							"host": ["{{API_URL}}"],
+							"path": ["posts", "user", "{{userId}}"],
+							"query": [
+								{ "key": "page", "value": "1" },
+								{ "key": "limit", "value": "10" }
+							]
+						},
+						"description": "Paginated list of posts for a given author."
+					}
+				},
+				{
+					"name": "Create Post",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.data && res.data.id) {",
+									"    pm.environment.set('postId', res.data.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"{{$randomJobTitle}}\",\n    \"body\": \"{{$randomLoremSentences}}\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{API_URL}}/posts",
+							"host": ["{{API_URL}}"],
+							"path": ["posts"]
+						},
+						"description": "Create a post authored by the authenticated user. Fields: title (min 2), body (required). Saves `postId`."
+					}
+				},
+				{
+					"name": "Update Post Status",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"published\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{API_URL}}/posts/{{postId}}/status",
+							"host": ["{{API_URL}}"],
+							"path": ["posts", "{{postId}}", "status"]
+						},
+						"description": "Update a post's status. Owner only. status: \"published\" | \"unpublished\"."
+					}
+				},
+				{
+					"name": "Delete Post",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/posts/{{postId}}",
+							"host": ["{{API_URL}}"],
+							"path": ["posts", "{{postId}}"]
+						},
+						"description": "Delete a post. Owner only. Returns 204."
+					}
+				}
+			]
+		}
+	]
+}
