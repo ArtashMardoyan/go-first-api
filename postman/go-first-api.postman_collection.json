@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "99f0e83b-dcdd-43c2-9140-62cdc8c41b5f",
 		"name": "06.1 GO First API",
-		"description": "Gin + GORM + PostgreSQL REST API.\n\nRequests within each folder are ordered by method: GET → POST → PATCH → DELETE (matching the Go handlers).\n\nFirst-run setup (the chain populates env vars via test scripts):\n1. **Users > Create User** — random email/name (saved to `userEmail`), password `test1234`, captures `userId`.\n2. **Auth > Login** — logs in with `userEmail` / `test1234`, captures `accessToken` (+ `userId`).\n3. Everything else inherits the collection-level Bearer auth automatically.\n\nResponse envelope:\n```\n{ \"success\": true,  \"message\": \"...\", \"data\": {},   \"error\": null }\n{ \"success\": false, \"message\": \"...\", \"data\": null, \"error\": \"...\" }\n```\nPaginated data: `{ \"items\": [], \"meta\": { \"page\": 1, \"limit\": 10, \"total\": 100 } }`",
+		"description": "Gin + GORM + PostgreSQL REST API.\n\nRequests within each folder are ordered by method: GET → POST → PATCH → DELETE (matching the Go handlers).\n\nFirst-run setup (the chain populates env vars via test scripts):\n1. **Users > Create User** — random email/name (saved to `userEmail`), password `test1234`, captures `userId`.\n2. **Auth > Login** — logs in with `userEmail` / `test1234`, captures `accessToken` (+ `userId`).\n3. Everything else inherits the collection-level Bearer auth automatically.\n\nResponse format:\n```\n// success\n{ \"data\": {} }\n// error\n{ \"error\": \"...\" }\n```\nPaginated success: `{ \"data\": { \"items\": [], \"meta\": { \"page\": 1, \"limit\": 10, \"total\": 100 } } }`. DELETE returns 204 with no body.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"auth": {

@@ -111,14 +111,21 @@ Rule: one blank line between each distinct phase (validate → build → persist
 
 ## Response format
 
+Set by `shared.OK` / `shared.Created` / `shared.Error` (see `internal/shared/response.go`):
+
 ```json
-{ "success": true,  "message": "...", "data": {},   "error": null }
-{ "success": false, "message": "...", "data": null, "error": "..." }
+// success (200 OK / 201 Created)
+{ "data": {} }
+
+// error (4xx / 5xx)
+{ "error": "..." }
 ```
 
-Paginated data inside `data`:
+`shared.NoContent` returns `204` with an empty body (used by DELETE).
+
+Paginated success: `data` holds the items + meta:
 ```json
-{ "items": [], "meta": { "page": 1, "limit": 10, "total": 100 } }
+{ "data": { "items": [], "meta": { "page": 1, "limit": 10, "total": 100 } } }
 ```
 
 ## Environment variables
